@@ -8,7 +8,7 @@ pipeline {
  
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/YOUR_USERNAME/bank-account-ci.git'
+                git branch: 'main', url: 'https://github.com/andrewkhmaladze/bank-account-ci.git'
             }
         }
  
