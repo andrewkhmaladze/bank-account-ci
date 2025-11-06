@@ -4,44 +4,46 @@ pipeline {
         maven 'MAVEN_HOME'
     }
  
-    stages {
+    environment {
+        PROJECT_NAME = "Bank Account CI, updated day 4"
+        SLACK_CHANNEL = "#ci-notifications"   // just for display simulation
+    }
  
+    stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/andrewkhmaladze/bank-account-ci.git'
+                echo "📦 Checking out project..."
+                git branch: 'Day4ExerciseWithNotifications', url: 'https://github.com/andrewkhmaladze/AndrewDevopsBootCamp.git'
             }
         }
  
         stage('Build') {
             steps {
+                echo "⚙️ Building ${env.PROJECT_NAME}..."
                 sh 'mvn clean compile'
             }
         }
  
-        stage('Run Unit & Integration Tests') {
+        stage('Test & Coverage') {
             steps {
+                echo "🧪 Running tests..."
                 sh 'mvn test'
             }
             post {
                 always {
                     junit '**/target/surefire-reports/*.xml'
- 
-                    // ✅ Publish JaCoCo coverage in Jenkins
                     jacoco(
                         execPattern: '**/target/jacoco.exec',
                         classPattern: '**/target/classes',
-                        sourcePattern: '**/src/main/java',
-                        inclusionPattern: '**/*.class'
+                        sourcePattern: '**/src/main/java'
                     )
-                }
-                failure {
-                    echo '❌ Tests failed! Check the “Test Result” tab.'
                 }
             }
         }
  
         stage('Package') {
             steps {
+                echo "📦 Packaging artifact..."
                 sh 'mvn package -DskipTests'
                 archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             }
@@ -50,10 +52,28 @@ pipeline {
  
     post {
         success {
-            echo '✅ Build, tests, and coverage all passed!'
+            echo ""
+            echo "✅✅✅ SUCCESS NOTIFICATION ✅✅✅"
+            echo "Message to ${env.SLACK_CHANNEL}:"
+            echo "🎉 ${env.PROJECT_NAME} build #${env.BUILD_NUMBER} succeeded!"
+            echo "🔗 View details: ${env.BUILD_URL}"
+            echo ""
+        }
+        unstable {
+            echo ""
+            echo "⚠️ WARNING: Build marked as UNSTABLE (Checkstyle or coverage warnings)."
+            echo ""
         }
         failure {
-            echo '💥 Pipeline failed. Check the failed stage.'
+            echo ""
+            echo "❌❌❌ FAILURE NOTIFICATION ❌❌❌"
+            echo "Message to ${env.SLACK_CHANNEL}:"
+            echo "💥 ${env.PROJECT_NAME} build #${env.BUILD_NUMBER} failed!"
+            echo "🔗 Logs: ${env.BUILD_URL}"
+            echo ""
+        }
+        always {
+            echo "📊 Pipeline completed at ${new Date()}"
         }
     }
 }
